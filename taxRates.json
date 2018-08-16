@@ -1,0 +1,9 @@
+{
+  "taxRates": [
+    { "province": "AB", "rate": "5%" },
+    { "province": "ON", "rate": "13%" },
+    { "province": "QC", "rate": "14.975%" },
+    { "province": "MI", "rate": "6%" },
+    { "province": "DE", "rate": "0%" }
+  ]
+}
