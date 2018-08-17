@@ -1,18 +1,13 @@
-'use strict';
-const basedir = require('path').resolve(__dirname, '.');
-const fs = require('fs');
-const filename = 'taxRates.json';
+'use strict'
 
-function readJsonFile(filename) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(basedir + '/' + filename, 'utf8', (err, data) => {
-      if (err) { reject(err) }
-      resolve(JSON.parse(data));
-    });
-  });
-}
+const taxRates = [
+  { "province": "AB", "rate": "5%" },
+  { "province": "ON", "rate": "13%" },
+  { "province": "QC", "rate": "14.975%" },
+  { "province": "MI", "rate": "6%" },
+  { "province": "DE", "rate": "0%" }];
 
-function genDiscount(cost){
+let genDiscount = function (cost){
   if( cost >= 0 && cost < 1000 ){
     return 0;
   }else if( cost >= 1000 && cost < 5000 ){
@@ -26,38 +21,37 @@ function genDiscount(cost){
   }
 }
 
-function toNum(percent){
+let toNum = function (percent){
   return percent.replace("%","")/100;
 }
 
-let processCal = async function (amount, price, state) {
+let processCal = function (amount, price, state) {
   if( !amount || typeof amount !== 'number' || !Number.isInteger(amount) || amount < 0 ){
-    return "Invalid amount";  
+    throw new Error(`Invalid amount`);  
   } 
   if( !price || typeof price !== 'number' || price < 0 ){
-    return "Invalid price";
+    throw new Error(`Invalid price`);
   }
   if( !state || typeof state !== 'string' || state.length !== 2 ){
-    return "Invalid state code";
+    throw new Error(`Invalid state code`);
   }  
 
   let cost = amount * price;
-  let postDeduc = cost - genDiscount(cost);  
-  
-  try{
-    const taxRes = await readJsonFile(filename);
-    for(let el of taxRes.taxRates){      
-      if(el.province === state){
-        let taxAmount = postDeduc * toNum(el.rate);        
-        let totalPrice = parseFloat(postDeduc + taxAmount).toFixed(2);
-        console.log(`Output: $${totalPrice}`);
-        return `$${totalPrice}`;
-      }
+  let postDeduc = cost - genDiscount(cost);
+  let taxAmount = taxRates.reduce((tax, el)=>{
+    if(el.province === state){
+      tax = postDeduc * toNum(el.rate);
     }
+    return tax;
+  }, null);
+  
+  if(!taxAmount){    
     return "No matched state found";
-  }catch(err){
-    return console.log(err);
-  }
+  }   
+
+  let totalPrice = parseFloat(postDeduc + taxAmount).toFixed(2);
+  // console.log(`Output: $${totalPrice}`);
+  return `$${totalPrice}`;  
 }
 
-module.exports = { processCal }
+module.exports = { processCal, toNum, genDiscount }
